@@ -220,7 +220,7 @@ void TebVisualization::publishObstacles(const ObstContainer& obstacles) const
       marker.id = idx++;
       marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
       marker.action = visualization_msgs::msg::Marker::ADD;
-      marker.lifetime = rclcpp::Duration(2, 0);
+      marker.lifetime = rclcpp::Duration(100, 0);
       marker.pose.orientation.w = 1.0;
 
       geometry_msgs::msg::Point start;
@@ -234,8 +234,8 @@ void TebVisualization::publishObstacles(const ObstContainer& obstacles) const
       end.z = 0;
       marker.points.push_back(end);
   
-      marker.scale.x = 0.1;
-      marker.scale.y = 0.1;
+      marker.scale.x = 0.02;
+      marker.scale.y = 0.02;
       marker.color.a = 1.0;
       marker.color.r = 0.0;
       marker.color.g = 1.0;
