@@ -74,14 +74,6 @@ TebLocalPlannerROS::TebLocalPlannerROS()
 {
 }
 
-TebLocalPlannerROS::TebLocalPlannerROS()
-    : nh_(nullptr), costmap_ros_(nullptr), tf_(nullptr), cfg_(new TebConfig()),
-      costmap_model_(nullptr), intra_proc_node_(nullptr),
-      costmap_converter_loader_("costmap_converter",
-                                "costmap_converter::BaseCostmapToPolygons"),
-      custom_via_points_active_(false), no_infeasible_plans_(0),
-      last_preferred_rotdir_(RotType::none), initialized_(false) {}
-
 TebLocalPlannerROS::~TebLocalPlannerROS()
 {
 }
