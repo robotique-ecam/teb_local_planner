@@ -63,11 +63,9 @@
 
 namespace teb_local_planner
 {
-<<<<<<< HEAD
-=======
-  
 
-TebLocalPlannerROS::TebLocalPlannerROS() 
+
+TebLocalPlannerROS::TebLocalPlannerROS()
     : nh_(nullptr), costmap_ros_(nullptr), tf_(nullptr), cfg_(new TebConfig()), costmap_model_(nullptr), intra_proc_node_(nullptr),
                                            costmap_converter_loader_("costmap_converter", "costmap_converter::BaseCostmapToPolygons"),
                                            custom_via_points_active_(false), no_infeasible_plans_(0),
@@ -75,15 +73,7 @@ TebLocalPlannerROS::TebLocalPlannerROS()
 					   logger_(rclcpp::get_logger("teb_logger"))
 {
 }
->>>>>>> Fix foxy compilation issues
 
-TebLocalPlannerROS::TebLocalPlannerROS()
-    : nh_(nullptr), costmap_ros_(nullptr), tf_(nullptr), cfg_(new TebConfig()),
-      costmap_model_(nullptr), intra_proc_node_(nullptr),
-      costmap_converter_loader_("costmap_converter",
-                                "costmap_converter::BaseCostmapToPolygons"),
-      custom_via_points_active_(false), no_infeasible_plans_(0),
-      last_preferred_rotdir_(RotType::none), initialized_(false) {}
 
 TebLocalPlannerROS::~TebLocalPlannerROS()
 {
@@ -97,37 +87,23 @@ TebLocalPlannerROS::~TebLocalPlannerROS()
 void TebLocalPlannerROS::initialize(nav2_util::LifecycleNode::SharedPtr node)
 {
   // check if the plugin is already initialized
-  if (!initialized_) {
+  if(!initialized_)
+  {
     // declare parameters (ros2-dashing)
-<<<<<<< HEAD
-    intra_proc_node_.reset(new rclcpp::Node(
-        "costmap_converter", nh_->get_namespace(), rclcpp::NodeOptions()));
-    cfg_->declareParameters(nh_, name_);
-
-    // get parameters of TebConfig via the nodehandle and override the default config
-    cfg_->loadRosParamFromNodeHandle(nh_, name_);
-
-=======
-    intra_proc_node_.reset( 
-            new rclcpp::Node("costmap_converter", node->get_namespace(), 
+    intra_proc_node_.reset(
+            new rclcpp::Node("costmap_converter", node->get_namespace(),
               rclcpp::NodeOptions()));
     cfg_->declareParameters(node, name_);
 
     // get parameters of TebConfig via the nodehandle and override the default config
     cfg_->loadRosParamFromNodeHandle(node, name_);
-    
->>>>>>> Fix foxy compilation issues
+
     // reserve some memory for obstacles
     obstacles_.reserve(500);
 
     // create robot footprint/contour model for optimization
-<<<<<<< HEAD
-    RobotFootprintModelPtr robot_model = getRobotFootprintFromParamServer();
-
-=======
     RobotFootprintModelPtr robot_model = getRobotFootprintFromParamServer(node);
-    
->>>>>>> Fix foxy compilation issues
+
     // create the planner instance
     if (cfg_->hcp.enable_homotopy_class_planning)
     {
@@ -180,10 +156,10 @@ void TebLocalPlannerROS::initialize(nav2_util::LifecycleNode::SharedPtr node)
       RCLCPP_INFO(logger_, "No costmap conversion plugin specified. All occupied costmap cells are treaten as point obstacles.");
     }
 
+
     // Get footprint of the robot and minimum and maximum distance from the center of the robot to its footprint vertices.
     footprint_spec_ = costmap_ros_->getRobotFootprint();
-    nav2_costmap_2d::calculateMinAndMaxDistances(
-        footprint_spec_, robot_inscribed_radius_, robot_circumscribed_radius);
+    nav2_costmap_2d::calculateMinAndMaxDistances(footprint_spec_, robot_inscribed_radius_, robot_circumscribed_radius);
 
     // setup dynamic reconfigure
 //    dynamic_recfg_ = std::make_shared< dynamic_reconfigure::Server<TebLocalPlannerReconfigureConfig> >(nh_);
@@ -194,32 +170,17 @@ void TebLocalPlannerROS::initialize(nav2_util::LifecycleNode::SharedPtr node)
     validateFootprints(robot_model->getInscribedRadius(), robot_inscribed_radius_, cfg_->obstacles.min_obstacle_dist);
 
     // setup callback for custom obstacles
-<<<<<<< HEAD
-    custom_obst_sub_ =
-        nh_->create_subscription<costmap_converter_msgs::msg::ObstacleArrayMsg>(
-            "obstacles", rclcpp::SystemDefaultsQoS(),
-            std::bind(&TebLocalPlannerROS::customObstacleCB, this,
-                      std::placeholders::_1));
-
-    // setup callback for custom via-points
-    via_points_sub_ = nh_->create_subscription<nav_msgs::msg::Path>(
-        "via_points", rclcpp::SystemDefaultsQoS(),
-        std::bind(&TebLocalPlannerROS::customViaPointsCB, this,
-                  std::placeholders::_1));
-
-=======
     custom_obst_sub_ = node->create_subscription<costmap_converter_msgs::msg::ObstacleArrayMsg>(
-                "obstacles", 
+                "obstacles",
                 rclcpp::SystemDefaultsQoS(),
                 std::bind(&TebLocalPlannerROS::customObstacleCB, this, std::placeholders::_1));
 
     // setup callback for custom via-points
     via_points_sub_ = node->create_subscription<nav_msgs::msg::Path>(
-                "via_points", 
+                "via_points",
                 rclcpp::SystemDefaultsQoS(),
                 std::bind(&TebLocalPlannerROS::customViaPointsCB, this, std::placeholders::_1));
-    
->>>>>>> Fix foxy compilation issues
+
     // initialize failure detector
     //rclcpp::Node::SharedPtr nh_move_base("~");
     double controller_frequency = 5;
@@ -230,13 +191,6 @@ void TebLocalPlannerROS::initialize(nav2_util::LifecycleNode::SharedPtr node)
     initialized_ = true;
 
     // This should be called since to prevent different time sources exception
-<<<<<<< HEAD
-    time_last_infeasible_plan_ = nh_->now();
-    time_last_oscillation_ = nh_->now();
-    RCLCPP_DEBUG(nh_->get_logger(), "teb_local_planner plugin initialized.");
-  } else {
-    RCLCPP_INFO(nh_->get_logger(), "teb_local_planner has already been initialized, doing nothing.");
-=======
     time_last_infeasible_plan_ = clock_->now();
     time_last_oscillation_ = clock_->now();
     RCLCPP_DEBUG(logger_, "teb_local_planner plugin initialized.");
@@ -244,7 +198,6 @@ void TebLocalPlannerROS::initialize(nav2_util::LifecycleNode::SharedPtr node)
   else
   {
     RCLCPP_INFO(logger_, "teb_local_planner has already been initialized, doing nothing.");
->>>>>>> Fix foxy compilation issues
   }
 }
 
@@ -290,17 +243,9 @@ void TebLocalPlannerROS::setPlan(const nav_msgs::msg::Path & orig_global_plan)
     global_plan_.push_back(out_pose);
   }
 
-<<<<<<< HEAD
-  // we do not clear the local planner here, since setPlan is called frequently
-  // whenever the global planner updates the plan. the local planner checks
-  // whether it is required to reinitialize the trajectory or not within each
-  // velocity computation step.
-
-=======
   // we do not clear the local planner here, since setPlan is called frequently whenever the global planner updates the plan.
-  // the local planner checks whether it is required to reinitialize the trajectory or not within each velocity computation step.  
-            
->>>>>>> Fix foxy compilation issues
+  // the local planner checks whether it is required to reinitialize the trajectory or not within each velocity computation step.
+
   return;
 }
 
@@ -317,22 +262,13 @@ geometry_msgs::msg::TwistStamped TebLocalPlannerROS::computeVelocityCommands(
     );
   }
   geometry_msgs::msg::TwistStamped cmd_vel;
-<<<<<<< HEAD
 
-  cmd_vel.header.stamp = nh_->now();
-=======
-  
   cmd_vel.header.stamp = clock_->now();
->>>>>>> Fix foxy compilation issues
   cmd_vel.header.frame_id = robot_base_frame_;
   cmd_vel.twist.linear.x = 0;
   cmd_vel.twist.linear.y = 0;
   cmd_vel.twist.angular.z = 0;
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> Fix foxy compilation issues
   // Get robot pose
   robot_pose_ = PoseSE2(pose.pose);
   geometry_msgs::msg::PoseStamped robot_pose;
@@ -367,13 +303,10 @@ geometry_msgs::msg::TwistStamped TebLocalPlannerROS::computeVelocityCommands(
   nav_2d_utils::transformPose(tf_, robot_pose.header.frame_id, global_plan_.back(), global_goal, transform_tolerance);
   //tf::poseStampedMsgToTF(global_plan_.back(), global_goal);
   //global_goal.setData( tf_plan_to_global * global_goal );
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> Fix foxy compilation issues
   // check if we should enter any backup mode and apply settings
   configureBackupModes(transformed_plan, goal_idx);
+
 
   // Return false if the transformed global plan is empty
   if (transformed_plan.empty())
@@ -395,7 +328,9 @@ geometry_msgs::msg::TwistStamped TebLocalPlannerROS::computeVelocityCommands(
     tf2::Quaternion q;
     q.setRPY(0, 0, robot_goal_.theta());
     transformed_plan.back().pose.orientation = tf2::toMsg(q);
-  } else {
+  }
+  else
+  {
     robot_goal_.theta() = tf2::getYaw(goal_point.pose.orientation);
   }
 
@@ -418,6 +353,7 @@ geometry_msgs::msg::TwistStamped TebLocalPlannerROS::computeVelocityCommands(
 
   // also consider custom obstacles (must be called after other updates, since the container is not cleared)
   updateObstacleContainerWithCustomObstacles();
+
 
   // Do not allow config changes during the following optimization step
   std::lock_guard<std::mutex> cfg_lock(cfg_->configMutex());
@@ -493,13 +429,8 @@ geometry_msgs::msg::TwistStamped TebLocalPlannerROS::computeVelocityCommands(
       planner_->clearPlanner();
 
       ++no_infeasible_plans_; // increase number of infeasible solutions in a row
-<<<<<<< HEAD
-      time_last_infeasible_plan_ = nh_->now();
-
-=======
       time_last_infeasible_plan_ = clock_->now();
-      
->>>>>>> Fix foxy compilation issues
+
       throw nav2_core::PlannerException(
         std::string("TebLocalPlannerROS: Resulting steering angle is not finite. Resetting planner...")
       );
@@ -517,20 +448,12 @@ geometry_msgs::msg::TwistStamped TebLocalPlannerROS::computeVelocityCommands(
   visualization_->publishObstacles(obstacles_);
   visualization_->publishViaPoints(via_points_);
   visualization_->publishGlobalPlan(global_plan_);
-<<<<<<< HEAD
 
-  return cmd_vel;
-}
-
-void TebLocalPlannerROS::updateObstacleContainerWithCostmap() {
-=======
-  
   return cmd_vel;
 }
 
 void TebLocalPlannerROS::updateObstacleContainerWithCostmap()
-{  
->>>>>>> Fix foxy compilation issues
+{
   // Add costmap obstacles if desired
   if (cfg_->obstacles.include_costmap_obstacles)
   {
@@ -614,22 +537,18 @@ void TebLocalPlannerROS::updateObstacleContainerWithCustomObstacles()
   {
     // We only use the global header to specify the obstacle coordinate system instead of individual ones
     Eigen::Affine3d obstacle_to_map_eig;
-    try {
+    try
+    {
       geometry_msgs::msg::TransformStamped obstacle_to_map = tf_->lookupTransform(
                   global_frame_, tf2::timeFromSec(0),
                   custom_obstacle_msg_.header.frame_id, tf2::timeFromSec(0),
                   custom_obstacle_msg_.header.frame_id, tf2::durationFromSec(0.5));
       obstacle_to_map_eig = tf2::transformToEigen(obstacle_to_map);
       //tf2::fromMsg(obstacle_to_map.transform, obstacle_to_map_eig);
-<<<<<<< HEAD
-    } catch (tf2::TransformException ex) {
-      RCLCPP_ERROR(nh_->get_logger(), "%s",ex.what());
-=======
     }
     catch (tf2::TransformException ex)
     {
       RCLCPP_ERROR(logger_, "%s",ex.what());
->>>>>>> Fix foxy compilation issues
       obstacle_to_map_eig.setIdentity();
     }
 
@@ -704,6 +623,7 @@ void TebLocalPlannerROS::updateViaPointsContainer(const std::vector<geometry_msg
     via_points_.push_back( Eigen::Vector2d( transformed_plan[i].pose.position.x, transformed_plan[i].pose.position.y ) );
     prev_idx = i;
   }
+
 }
 
 //Eigen::Vector2d TebLocalPlannerROS::tfPoseToEigenVector2dTransRot(const tf::Pose& tf_vel)
@@ -713,6 +633,7 @@ void TebLocalPlannerROS::updateViaPointsContainer(const std::vector<geometry_msg
 //  vel.coeffRef(1) = tf::getYaw(tf_vel.getRotation());
 //  return vel;
 //}
+
 
 bool TebLocalPlannerROS::pruneGlobalPlan(const geometry_msgs::msg::PoseStamped& global_pose, std::vector<geometry_msgs::msg::PoseStamped>& global_plan, double dist_behind_robot)
 {
@@ -760,6 +681,7 @@ bool TebLocalPlannerROS::pruneGlobalPlan(const geometry_msgs::msg::PoseStamped& 
   return true;
 }
 
+
 bool TebLocalPlannerROS::transformGlobalPlan(const std::vector<geometry_msgs::msg::PoseStamped>& global_plan,
                   const geometry_msgs::msg::PoseStamped& global_pose, const nav2_costmap_2d::Costmap2D& costmap, const std::string& global_frame, double max_plan_length,
                   std::vector<geometry_msgs::msg::PoseStamped>& transformed_plan, int* current_goal_idx, geometry_msgs::msg::TransformStamped* tf_plan_to_global) const
@@ -770,7 +692,8 @@ bool TebLocalPlannerROS::transformGlobalPlan(const std::vector<geometry_msgs::ms
 
   transformed_plan.clear();
 
-  try {
+  try
+  {
     if (global_plan.empty())
     {
       RCLCPP_ERROR(logger_, "Received plan with zero length");
@@ -799,6 +722,7 @@ bool TebLocalPlannerROS::transformGlobalPlan(const std::vector<geometry_msgs::ms
                                      costmap.getSizeInCellsY() * costmap.getResolution() / 2.0);
     dist_threshold *= 0.85; // just consider 85% of the costmap size to better incorporate point obstacle that are
                            // located on the border of the local costmap
+
 
     int i = 0;
     double sq_dist_threshold = dist_threshold * dist_threshold;
@@ -873,16 +797,6 @@ bool TebLocalPlannerROS::transformGlobalPlan(const std::vector<geometry_msgs::ms
 
     // Return the transformation from the global plan to the global planning frame if desired
     if (tf_plan_to_global) *tf_plan_to_global = plan_to_global_transform;
-<<<<<<< HEAD
-  } catch (tf2::LookupException &ex) {
-    RCLCPP_ERROR(nh_->get_logger(), "No Transform available Error: %s\n", ex.what());
-    return false;
-  } catch (tf2::ConnectivityException &ex) {
-    RCLCPP_ERROR(nh_->get_logger(), "Connectivity Error: %s\n", ex.what());
-    return false;
-  } catch (tf2::ExtrapolationException &ex) {
-    RCLCPP_ERROR(nh_->get_logger(), "Extrapolation Error: %s\n", ex.what());
-=======
   }
   catch(tf2::LookupException& ex)
   {
@@ -897,7 +811,6 @@ bool TebLocalPlannerROS::transformGlobalPlan(const std::vector<geometry_msgs::ms
   catch(tf2::ExtrapolationException& ex)
   {
     RCLCPP_ERROR(logger_, "Extrapolation Error: %s\n", ex.what());
->>>>>>> Fix foxy compilation issues
     if (global_plan.size() > 0)
       RCLCPP_ERROR(logger_, "Global Frame: %s Plan Frame size %d: %s\n", global_frame.c_str(), (unsigned int)global_plan.size(), global_plan[0].header.frame_id.c_str());
 
@@ -906,6 +819,9 @@ bool TebLocalPlannerROS::transformGlobalPlan(const std::vector<geometry_msgs::ms
 
   return true;
 }
+
+
+
 
 double TebLocalPlannerROS::estimateLocalGoalOrientation(const std::vector<geometry_msgs::msg::PoseStamped>& global_plan, const geometry_msgs::msg::PoseStamped& local_goal,
                     int current_goal_idx, const geometry_msgs::msg::TransformStamped& tf_plan_to_global, int moving_average_length) const
@@ -951,11 +867,12 @@ double TebLocalPlannerROS::estimateLocalGoalOrientation(const std::vector<geomet
     candidates.push_back( std::atan2(tf_pose_kp1.pose.position.y - tf_pose_k.pose.position.y,
               tf_pose_kp1.pose.position.x - tf_pose_k.pose.position.x ) );
 
-    if (i < range_end - 1)
+    if (i<range_end-1)
       tf_pose_k = tf_pose_kp1;
   }
   return average_angles(candidates);
 }
+
 
 void TebLocalPlannerROS::saturateVelocity(double& vx, double& vy, double& omega, double max_vel_x, double max_vel_y, double max_vel_theta, double max_vel_x_backwards) const
 {
@@ -986,6 +903,7 @@ void TebLocalPlannerROS::saturateVelocity(double& vx, double& vy, double& omega,
     vx = -max_vel_x_backwards;
 }
 
+
 double TebLocalPlannerROS::convertTransRotVelToSteeringAngle(double v, double omega, double wheelbase, double min_turning_radius) const
 {
   if (omega==0 || v==0)
@@ -999,6 +917,7 @@ double TebLocalPlannerROS::convertTransRotVelToSteeringAngle(double v, double om
   return std::atan(wheelbase / radius);
 }
 
+
 void TebLocalPlannerROS::validateFootprints(double opt_inscribed_radius, double costmap_inscribed_radius, double min_obst_dist)
 {
     RCLCPP_WARN_EXPRESSION(
@@ -1008,59 +927,17 @@ void TebLocalPlannerROS::validateFootprints(double opt_inscribed_radius, double 
                   "Infeasible optimziation results might occur frequently!", opt_inscribed_radius, min_obst_dist, costmap_inscribed_radius);
 }
 
+
+
 void TebLocalPlannerROS::configureBackupModes(std::vector<geometry_msgs::msg::PoseStamped>& transformed_plan,  int& goal_idx)
 {
-<<<<<<< HEAD
-    rclcpp::Time current_time = nh_->now();
-
-=======
     rclcpp::Time current_time = clock_->now();
-    
->>>>>>> Fix foxy compilation issues
+
     // reduced horizon backup mode
     if (cfg_->recovery.shrink_horizon_backup &&
-        goal_idx < (int)transformed_plan.size() -
-                       1 && // we do not reduce if the goal is already selected
-                            // (because the orientation might change -> can
-                            // introduce oscillations)
-        (no_infeasible_plans_ > 0 ||
-         (current_time - time_last_infeasible_plan_).seconds() <
-             cfg_->recovery
-                 .shrink_horizon_min_duration)) // keep short horizon for at
-                                                // least a few seconds
+        goal_idx < (int)transformed_plan.size()-1 && // we do not reduce if the goal is already selected (because the orientation might change -> can introduce oscillations)
+       (no_infeasible_plans_>0 || (current_time - time_last_infeasible_plan_).seconds() < cfg_->recovery.shrink_horizon_min_duration )) // keep short horizon for at least a few seconds
     {
-<<<<<<< HEAD
-      RCLCPP_INFO_EXPRESSION(nh_->get_logger(), no_infeasible_plans_ == 1,
-                             "Activating reduced horizon backup mode for at "
-                             "least %.2f sec (infeasible trajectory detected).",
-                             cfg_->recovery.shrink_horizon_min_duration);
-
-      // Shorten horizon if requested
-      // reduce to 50 percent:
-      int horizon_reduction = goal_idx / 2;
-
-      if (no_infeasible_plans_ > 9) {
-        RCLCPP_INFO_EXPRESSION(nh_->get_logger(), no_infeasible_plans_ == 10,
-                               "Infeasible trajectory detected 10 times in a "
-                               "row: further reducing horizon...");
-        horizon_reduction /= 2;
-      }
-
-      // we have a small overhead here, since we already transformed 50% more of
-      // the trajectory. But that's ok for now, since we do not need to make
-      // transformGlobalPlan more complex and a reduced horizon should occur
-      // just rarely.
-      int new_goal_idx_transformed_plan =
-          int(transformed_plan.size()) - horizon_reduction - 1;
-      goal_idx -= horizon_reduction;
-      if (new_goal_idx_transformed_plan > 0 && goal_idx >= 0)
-        transformed_plan.erase(transformed_plan.begin() +
-                                   new_goal_idx_transformed_plan,
-                               transformed_plan.end());
-      else
-        goal_idx +=
-            horizon_reduction; // this should not happen, but safety first ;-)
-=======
         RCLCPP_INFO_EXPRESSION(
                     logger_,
                     no_infeasible_plans_==1,
@@ -1070,7 +947,7 @@ void TebLocalPlannerROS::configureBackupModes(std::vector<geometry_msgs::msg::Po
         // Shorten horizon if requested
         // reduce to 50 percent:
         int horizon_reduction = goal_idx/2;
-        
+
         if (no_infeasible_plans_ > 9)
         {
             RCLCPP_INFO_EXPRESSION(
@@ -1079,18 +956,18 @@ void TebLocalPlannerROS::configureBackupModes(std::vector<geometry_msgs::msg::Po
                         "Infeasible trajectory detected 10 times in a row: further reducing horizon...");
             horizon_reduction /= 2;
         }
-        
+
         // we have a small overhead here, since we already transformed 50% more of the trajectory.
-        // But that's ok for now, since we do not need to make transformGlobalPlan more complex 
+        // But that's ok for now, since we do not need to make transformGlobalPlan more complex
         // and a reduced horizon should occur just rarely.
         int new_goal_idx_transformed_plan = int(transformed_plan.size()) - horizon_reduction - 1;
         goal_idx -= horizon_reduction;
         if (new_goal_idx_transformed_plan>0 && goal_idx >= 0)
             transformed_plan.erase(transformed_plan.begin()+new_goal_idx_transformed_plan, transformed_plan.end());
         else
-            goal_idx += horizon_reduction; // this should not happen, but safety first ;-) 
->>>>>>> Fix foxy compilation issues
+            goal_idx += horizon_reduction; // this should not happen, but safety first ;-)
     }
+
 
     // detect and resolve oscillations
     if (cfg_->recovery.oscillation_recovery)
@@ -1106,13 +983,8 @@ void TebLocalPlannerROS::configureBackupModes(std::vector<geometry_msgs::msg::Po
                                cfg_->recovery.oscillation_v_eps, cfg_->recovery.oscillation_omega_eps);
 
         bool oscillating = failure_detector_.isOscillating();
-<<<<<<< HEAD
-        bool recently_oscillated = (nh_->now()-time_last_oscillation_).seconds() < cfg_->recovery.oscillation_recovery_min_duration; // check if we have already detected an oscillation recently
-
-=======
         bool recently_oscillated = (clock_->now()-time_last_oscillation_).seconds() < cfg_->recovery.oscillation_recovery_min_duration; // check if we have already detected an oscillation recently
-        
->>>>>>> Fix foxy compilation issues
+
         if (oscillating)
         {
             if (!recently_oscillated)
@@ -1136,6 +1008,7 @@ void TebLocalPlannerROS::configureBackupModes(std::vector<geometry_msgs::msg::Po
     }
 
 }
+
 
 void TebLocalPlannerROS::customObstacleCB(const costmap_converter_msgs::msg::ObstacleArrayMsg::ConstSharedPtr obst_msg)
 {
@@ -1162,13 +1035,8 @@ void TebLocalPlannerROS::customViaPointsCB(const nav_msgs::msg::Path::ConstShare
   }
   custom_via_points_active_ = !via_points_.empty();
 }
-<<<<<<< HEAD
 
-RobotFootprintModelPtr TebLocalPlannerROS::getRobotFootprintFromParamServer()
-=======
-     
 RobotFootprintModelPtr TebLocalPlannerROS::getRobotFootprintFromParamServer(nav2_util::LifecycleNode::SharedPtr node)
->>>>>>> Fix foxy compilation issues
 {
   node->declare_parameter(name_ + "." + "footprint_model.type");
   node->declare_parameter(name_ + "." + "footprint_model.radius");
@@ -1180,13 +1048,8 @@ RobotFootprintModelPtr TebLocalPlannerROS::getRobotFootprintFromParamServer(nav2
   node->declare_parameter(name_ + "." + "footprint_model.rear_radius");
   node->declare_parameter(name_ + "." + "footprint_model.vertices");
 
-<<<<<<< HEAD
   std::string model_name;
-  if (!nh_->get_parameter(name_ + "." + "footprint_model.type", model_name))
-=======
-  std::string model_name; 
   if (!node->get_parameter(name_ + "." + "footprint_model.type", model_name))
->>>>>>> Fix foxy compilation issues
   {
     RCLCPP_INFO(logger_, "No robot footprint model specified for trajectory optimization. Using point-shaped model.");
     return std::make_shared<PointRobotFootprint>();
@@ -1238,13 +1101,8 @@ RobotFootprintModelPtr TebLocalPlannerROS::getRobotFootprintFromParamServer(nav2
                    node->get_namespace());
       return std::make_shared<PointRobotFootprint>();
     }
-<<<<<<< HEAD
 
-    RCLCPP_INFO(nh_->get_logger(),
-=======
-    
     RCLCPP_INFO(logger_,
->>>>>>> Fix foxy compilation issues
                 "Footprint model 'line' (line_start: [%f,%f]m, line_end: [%f,%f]m) loaded for trajectory optimization.",
                 line_start[0], line_start[1], line_end[0], line_end[1]);
 
@@ -1309,6 +1167,7 @@ RobotFootprintModelPtr TebLocalPlannerROS::getRobotFootprintFromParamServer(nav2
                 node->get_namespace());
       return std::make_shared<PointRobotFootprint>();
     }
+
   }
 
   // otherwise
